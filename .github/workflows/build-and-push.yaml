@@ -3,7 +3,7 @@ name: Build Docker Image, Push to GHCR, and Deploy to Kubernetes
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   build-and-push:
