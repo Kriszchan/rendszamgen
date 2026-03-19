@@ -1,0 +1,12 @@
+@font-face {
+  font-family: 'HuLi-Regular';
+  src: url('/fonts/HuLi-Regular.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Fallback utility class in case you want to apply via className */
+.font-myplate {
+  font-family: 'MyPlate', Arial, sans-serif;
+}
