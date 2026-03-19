@@ -42,7 +42,8 @@ function App() {
     if (value.length > 5) {
       value = value.slice(0, 5) + '-' + value.slice(5)
     }
-    plate[0] = value.slice(0, 9)
+
+    setPlate([value, ...plate.slice(1)])
   }
 
   return (
