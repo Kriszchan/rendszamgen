@@ -1,48 +1,60 @@
-import { useState } from 'react'
+import { useEffect, useState, type ChangeEvent } from 'react'
 
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-const consonants = 'BCDFGHJKLMNPQRSTVWXYZ'
+const PLATE_API_URL = 'https://pk-backend.jcloud.jedlik.cloud'
 
-function randomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min
-}
+async function fetchPlateFromBackend() {
+  const response = await fetch(PLATE_API_URL)
 
-function randomLetters(length: number): string {
-  return Array.from({ length }, () => LETTERS[randomInt(0, LETTERS.length - 1)]).join('')
-}
-function randomConsonants(length: number): string {
-  return Array.from({ length }, () => consonants[randomInt(0, consonants.length - 1)]).join('')
-}
+  if (!response.ok) {
+    throw new Error('Plate API request failed')
+  }
 
-function randomDigits(length: number): string {
-  return Array.from({ length }, () => randomInt(0, 9).toString()).join('')
-}
+  const data: unknown = await response.json()
 
-function generateModernPlate(): string {
-  return `${randomConsonants(2)}   ${randomLetters(2)}-${randomDigits(3)}`
-}
+  console.log(data)
+  if (Array.isArray(data)) {
+    const plates = data.filter((item): item is string => typeof item === 'string')
+    if (plates.length > 0) {
+      return data as string[]
+    }
+  }
 
+  if (typeof data === 'string') {
+    return data
+  }
 
-function createPlate(): string {
-  return generateModernPlate()
+  if (typeof data === 'object' && data !== null && 'plate' in data) {
+    const plate = (data as { plate?: unknown }).plate
+    if (typeof plate === 'string') {
+      return plate
+    }
+  }
+
+  throw new Error('Invalid response format from plate API')
 }
 
 function App() {
-
-  const [plate, setPlate] = useState([createPlate(), createPlate(), createPlate(), createPlate(), createPlate()])
+  const [plate, setPlate] = useState<string[]>([''])
   const plateImageUrl = '/plate-bg.png'
   const [inputValue, setInputValue] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
-  const generate = () => {
-    if(inputValue.length === 9) {
-      setPlate([inputValue, createPlate(), createPlate(), createPlate(), createPlate() ])
-      return
+  const setRandomPlate = async () => {
+    try {
+      setErrorMessage('')
+      const generatedPlate = await fetchPlateFromBackend()
+      setPlate(generatedPlate as string[])
+    } catch {
+      setErrorMessage('Nem sikerült lekérni a rendszámot a backendből.')
     }
-    setPlate([createPlate(), createPlate(), createPlate(), createPlate(), createPlate()])
   }
 
+  const generate = async () => {
+    setInputValue('')
+    await setRandomPlate()
+  }
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')
 
     if (v.length > 2) {
@@ -55,9 +67,14 @@ function App() {
     setInputValue(v)
 
     if (v.length === 9) {
-      setPlate(prev => [v, ...prev.slice(1)])
+      setPlate([v])
+      setErrorMessage('')
     }
   }
+
+  useEffect(() => {
+    void setRandomPlate()
+  }, [])
 
   return (
     <div className="container py-5 h-80 my-auto overflow-y-hidden">
@@ -75,13 +92,20 @@ function App() {
                     </div>
                   )
                 }
-                <input 
-                  type="text" 
-                  className="form-control form-control-lg text-center fw-bold text-uppercase mb-4 w-50 mx-auto" 
+                {
+                  errorMessage && (
+                    <div className="alert alert-danger text-center w-50 mx-auto" role="alert">
+                      {errorMessage}
+                    </div>
+                  )
+                }
+                <input
+                  type="text"
+                  className="form-control form-control-lg text-center fw-bold text-uppercase mb-4 w-50 mx-auto"
                   style={{ letterSpacing: '2px' }}
                   maxLength={9}
                   value={inputValue}
-                  onChange={handleInputChange} 
+                  onChange={handleInputChange}
                   placeholder="AA BB-123"
                 />
               </div>
@@ -90,7 +114,9 @@ function App() {
                   <div key={index} className="d-flex justify-content-center mb-3">
                     <div style={{ position: 'relative', width: '100%', maxWidth: 560 }}>
                       <img src={plateImageUrl} alt="plate background" className="img-fluid d-block" style={{ width: '100%', height: 'auto' }} />
-                      <div aria-live="polite" style={{
+                      <div
+                        aria-live="polite"
+                        style={{
                           position: 'absolute',
                           left: '58.5%',
                           top: '56%',
@@ -114,13 +140,11 @@ function App() {
                     </div>
                   </div>
                 ))
-                  
               }
 
               <div className="d-flex gap-2 justify-content-center mb-2">
                 <button className="btn btn-primary" type="button" onClick={generate}>Generálj véletlenszerűt</button>
               </div>
-              
             </div>
           </div>
         </div>
