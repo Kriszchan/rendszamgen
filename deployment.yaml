@@ -1,3 +1,16 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: rendszam-frontend-certificate
+spec:
+  secretName: rendszamgen-certificate
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - rendszam.jcloud.jedlik.cloud
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -40,6 +53,10 @@ metadata:
   name: rendszamgen-ingress
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+      - rendszam.jcloud.jedlik.cloud
+    secretName: rendszamgen-certificate
 
   rules:
     - host: rendszam.jcloud.jedlik.cloud
